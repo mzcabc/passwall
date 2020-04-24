@@ -1,0 +1,21 @@
+version: "3.3"
+services:
+  v2ray-server:
+    container_name: v2ray-server
+    image: v2ray/official
+    volumes:
+      - ./v2ray-config.json:/etc/v2ray/config.json
+  caddy:
+    container_name: v2ray-caddy
+    image: abiosoft/caddy
+    volumes:
+      - ./caddy:/root/.caddy
+      - ./Caddyfile:/etc/Caddyfile
+    ports:
+     - "80:80"
+     - "443:443"
+    environment:
+     - ACME_AGREE=true
+     - V2RAY_DOMAINS=domain.com
+    links:
+     - v2ray-server

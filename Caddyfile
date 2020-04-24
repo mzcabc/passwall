@@ -1,0 +1,19 @@
+{$V2RAY_DOMAINS} {
+	gzip
+	tls admin@domain.com
+
+	proxy /phpmyadmin v2ray-server:90 {
+		websocket
+		header_upstream -Origin
+	}
+
+	proxy /manage v2ray-server:91 {
+		websocket
+		header_upstream -Origin
+	}
+
+	proxy / https://www.v2ex.com
+
+	log stdout
+	errors stdout
+}
