@@ -1,21 +1,31 @@
-version: "3.3"
+version: "3"
 services:
   v2ray-server:
     container_name: v2ray-server
     image: v2ray/official
     volumes:
-      - ./v2ray-config.json:/etc/v2ray/config.json
+      - ./v2ray-server.json:/etc/v2ray/config.json
   caddy:
-    container_name: v2ray-caddy
+    container_name: passwall-caddy
     image: abiosoft/caddy
     volumes:
       - ./caddy:/root/.caddy
       - ./Caddyfile:/etc/Caddyfile
     ports:
      - "80:80"
-     - "443:443"
     environment:
      - ACME_AGREE=true
      - V2RAY_DOMAINS=domain.com
     links:
      - v2ray-server
+  trojan-server:
+    image: trojangfw/trojan
+    container_name: trojan-server
+    restart: always
+    ports:
+     - "443:443"
+    volumes:
+      - ./trojan-server.json:/config/config.json
+      - ./caddy/acme/acme-v02.api.letsencrypt.org/sites:/sites
+    links:
+      - caddy:__DOCKER_CADDY__

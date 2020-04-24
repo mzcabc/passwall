@@ -1,6 +1,5 @@
-{$V2RAY_DOMAINS} {
+{$V2RAY_DOMAINS}:80 {
 	gzip
-	tls admin@domain.com
 
 	proxy /phpmyadmin v2ray-server:90 {
 		websocket
@@ -11,6 +10,16 @@
 		websocket
 		header_upstream -Origin
 	}
+
+	proxy / https://www.v2ex.com
+
+	log stdout
+	errors stdout
+}
+
+{$V2RAY_DOMAINS}:443 {
+	gzip
+	tls admin@domain.com
 
 	proxy / https://www.v2ex.com
 
