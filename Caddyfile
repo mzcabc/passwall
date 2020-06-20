@@ -1,4 +1,4 @@
-{$V2RAY_DOMAINS}:80 {
+{$DOMAIN}:80 {
 	gzip
 
 	proxy /phpmyadmin v2ray-server:90 {
@@ -17,9 +17,9 @@
 	errors stdout
 }
 
-{$V2RAY_DOMAINS}:443 {
+{$DOMAIN}:443 {
 	gzip
-	tls admin@domain.com
+	tls {$MAIL}
 
 	proxy / https://www.v2ex.com
 
