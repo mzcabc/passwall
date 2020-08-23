@@ -23,7 +23,7 @@
         "security": "none",
         "wsSettings": {
           "connectionReuse": true,
-          "path": "/patha"
+          "path": "/phpmyadmin"
         }
       },
       "listen": "0.0.0.0"
@@ -39,7 +39,7 @@
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-          "path": "/pathb"
+          "path": "/manage"
         },
         "security": "none"
       }
