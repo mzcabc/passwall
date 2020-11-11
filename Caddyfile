@@ -1,28 +1,12 @@
+{
+  auto_https disable_redirects
+}
+
 {$DOMAIN}:80 {
-	gzip
-
-	proxy /phpmyadmin v2ray-server:90 {
-		websocket
-		header_upstream -Origin
-	}
-
-	proxy /manage v2ray-server:91 {
-		websocket
-		header_upstream -Origin
-	}
-
-	proxy / https://www.v2ex.com
-
-	log stdout
-	errors stdout
+  reverse_proxy /phpmyadmin v2ray-server:90
+  reverse_proxy /manage v2ray-server:91
+  reverse_proxy * http://v2ex.com
 }
 
 {$DOMAIN}:443 {
-	gzip
-	tls {$MAIL}
-
-	proxy / https://www.v2ex.com
-
-	log stdout
-	errors stdout
 }

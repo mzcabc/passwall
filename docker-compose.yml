@@ -8,17 +8,15 @@ services:
       - ./v2ray-server.json:/etc/v2ray/config.json
   caddy:
     container_name: passwall-caddy
-    image: abiosoft/caddy
+    image: caddy
     restart: always
     volumes:
-      - ./caddy:/root/.caddy
-      - ./Caddyfile:/etc/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy:/data/caddy
     ports:
       - 80:80
     environment:
-      - ACME_AGREE=true
       - DOMAIN=${DOMAIN}
-      - MAIL=${MAIL}
     links:
       - v2ray-server
   trojan-server:
@@ -31,11 +29,11 @@ services:
       - DOMAIN=${DOMAIN}
     volumes:
       - ./trojan-server.json:/config/config_template.json
-      - ./caddy/acme/acme-v02.api.letsencrypt.org/sites:/sites
+      - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory:/certificates
     command: >-
       /bin/ash -c "cp config_template.json config.json &&
-        sed -e "s@CERT_PATH@/sites/${DOMAIN}/${DOMAIN}.crt@g" -i config.json &&
-        sed -e "s@KEY_PATH@/sites/${DOMAIN}/${DOMAIN}.key@g" -i config.json &&
+        sed -e "s@CERT_PATH@/certificates/${DOMAIN}/${DOMAIN}.crt@g" -i config.json &&
+        sed -e "s@KEY_PATH@/certificates/${DOMAIN}/${DOMAIN}.key@g" -i config.json &&
         exec trojan config.json"
     links:
       - caddy:__DOCKER_CADDY__
