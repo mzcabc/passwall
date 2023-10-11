@@ -6,6 +6,9 @@ services:
     volumes:
       - ./v2ray-server.json:/etc/v2ray/config.json
     command: run -c /etc/v2ray/config.json
+    logging:
+      driver: "local"
+
   caddy:
     image: caddy
     restart: always
@@ -22,6 +25,8 @@ services:
       test: ["CMD-SHELL", "test -d /data/caddy/certificates/*/${DOMAIN}"]
       interval: 1s
       retries: 60
+    logging:
+      driver: "local"
 
   trojan:
     image: trojangfw/trojan
@@ -43,3 +48,6 @@ services:
     depends_on:
       caddy:
         condition: service_healthy
+    logging:
+      driver: "local"
+
