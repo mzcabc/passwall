@@ -1,14 +1,12 @@
 version: '3'
 services:
-  v2ray-server:
-    container_name: v2ray-server
+  v2ray:
     image: v2fly/v2fly-core
     restart: always
     volumes:
       - ./v2ray-server.json:/etc/v2ray/config.json
     command: run -c /etc/v2ray/config.json
   caddy:
-    container_name: passwall-caddy
     image: caddy
     restart: always
     volumes:
@@ -18,11 +16,15 @@ services:
       - 80:80
     environment:
       - DOMAIN=${DOMAIN}
-    links:
-      - v2ray-server
-  trojan-server:
+    depends_on:
+      - v2ray
+    healthcheck:
+      test: ["CMD-SHELL", "test -d /data/caddy/certificates/*/${DOMAIN}"]
+      interval: 1s
+      retries: 60
+
+  trojan:
     image: trojangfw/trojan
-    container_name: trojan-server
     restart: always
     ports:
       - 443:443
@@ -38,3 +40,6 @@ services:
         exec trojan config.json"
     links:
       - caddy:__DOCKER_CADDY__
+    depends_on:
+      caddy:
+        condition: service_healthy
