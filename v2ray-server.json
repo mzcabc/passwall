@@ -13,7 +13,6 @@
         "clients": [
           {
             "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-            "alterId": 233,
             "description": "me"
           }
         ]

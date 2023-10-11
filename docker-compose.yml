@@ -6,6 +6,7 @@ services:
     restart: always
     volumes:
       - ./v2ray-server.json:/etc/v2ray/config.json
+    command: run -c /etc/v2ray/config.json
   caddy:
     container_name: passwall-caddy
     image: caddy
