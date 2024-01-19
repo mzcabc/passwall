@@ -2,11 +2,13 @@
   auto_https disable_redirects
 }
 
-{$DOMAIN}:80 {
-  reverse_proxy /phpmyadmin v2ray:90
-  reverse_proxy /manage v2ray:91
-  reverse_proxy * http://v2ex.com
-}
+{$DOMAIN} {
+  reverse_proxy /phpmyadmin v2fly:90
+  reverse_proxy /manage v2fly:91
 
-{$DOMAIN}:443 {
+  route /whoami {
+    respond "Hello, World! from {http.request.host}"
+  }
+
+  reverse_proxy * http://v2ex.com
 }

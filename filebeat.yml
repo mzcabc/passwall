@@ -1,0 +1,23 @@
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            contains:
+              docker.container.image: v2fly
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS}'
+  ssl.verification_mode: none
+  username: '${ELASTICSEARCH_USERNAME}'
+  password: '${ELASTICSEARCH_PASSWORD}'
+  index: 'filebeat-filestream-%{[agent.version]}-%{+yyyy}'
+  pipeline: v2fly
+
+setup.template.enabled: false
+
+setup.ilm.enabled: false

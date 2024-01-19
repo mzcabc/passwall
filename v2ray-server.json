@@ -10,12 +10,7 @@
       "port": 90,
       "protocol": "vmess",
       "settings": {
-        "clients": [
-          {
-            "id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-            "description": "me"
-          }
-        ]
+        "clients": "##_USERS_##"
       },
       "streamSettings": {
         "network": "ws",
@@ -63,6 +58,13 @@
         "type": "field",
         "ip": [
           "geoip:private"
+        ],
+        "outboundTag": "blocked"
+      },
+      {
+        "type": "field",
+        "protocol": [
+          "bittorrent"
         ],
         "outboundTag": "blocked"
       }
