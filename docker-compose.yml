@@ -46,7 +46,7 @@ services:
     container_name: filebeat
     hostname: ${HOSTNAME}
     user: root
-    image: docker.elastic.co/beats/filebeat:8.11.3
+    image: docker.elastic.co/beats/filebeat:${FILEBEAT_VERSION}
     deploy:
       resources:
         limits:
@@ -62,6 +62,9 @@ services:
       - "-e"
     environment:
       - TZ=Asia/Shanghai
+      - ELASTICSEARCH_HOSTS=${ELASTICSEARCH_HOSTS}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
     volumes:
       - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
       - /var/run/docker.sock:/var/run/docker.sock
