@@ -9,15 +9,35 @@ filebeat.autodiscover:
             - type: container
               paths:
                 - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              processors:
+                - drop_event:
+                    when:
+                      contains:
+                        message: "[Warning]"
+                - include_fields:
+                    fields:
+                      - message
+                      - host.name
+                      - container.name
+                      - input.type
+                - dissect:
+                    tokenizer: "%{}/%{}/%{} %{}:%{}:%{} %{client_ip}:%{} accepted %{protocol}:%{destination}:%{port} [%{result}] email: %{email}"
+                    field: "message"
+                    target_prefix: ""
+                - grok:
+                    patterns:
+                      - '%{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{TIME} %{IP:client_ip}:%{NUMBER:client_port:int} accepted %{WORD:protocol}:%{HOSTNAME:destination}:%{NUMBER:port:int} \[%{WORD:result}\] email: %{EMAILADDRESS:email}'
+                    ignore_missing: true
 
 output.elasticsearch:
-  hosts: '${ELASTICSEARCH_HOSTS}'
+  hosts: "${ELASTICSEARCH_HOSTS}"
   ssl.verification_mode: none
-  username: '${ELASTICSEARCH_USERNAME}'
-  password: '${ELASTICSEARCH_PASSWORD}'
-  index: 'filebeat-filestream-%{[agent.version]}-%{+yyyy}'
-  pipeline: v2fly
+  username: "${ELASTICSEARCH_USERNAME}"
+  password: "${ELASTICSEARCH_PASSWORD}"
+  index: "filebeat-filestream-%{[agent.version]}-%{+yyyy}"
+  # pipeline: v2fly
 
 setup.template.enabled: false
 
 setup.ilm.enabled: false
+# logging.level: debug
