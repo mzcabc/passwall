@@ -1,11 +1,25 @@
 version: "3"
 services:
+  kv:
+    container_name: kv
+    image: ghcr.io/mzcabc/docker-cloudflare-kv:main
+    volumes:
+      - ./kv:/kv
+    environment:
+      - AUTH=${KV_AUTH}
+      - ACCOUNT_ID=${KV_ACCOUNT_ID}
+      - NAMESPACE_ID=${KV_NAMESPACE_ID}
+      - KEY_NAME=${KV_KEY_NAME}
+      - OUTPUT_FILE=users.json
+
   setup:
     container_name: setup
+    depends_on:
+      - kv
     image: alpine
     command: /bin/ash /conf_gen.sh
     volumes:
-      - ./users.json:/users.json
+      - ./kv/users.json:/users.json
       - ./v2ray-server.json:/v2ray-server.json
       - ./conf_gen.sh:/conf_gen.sh
       - conf:/conf
