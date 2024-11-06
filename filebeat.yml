@@ -24,10 +24,10 @@ filebeat.autodiscover:
                     tokenizer: "%{}/%{}/%{} %{}:%{}:%{} %{client_ip}:%{} accepted %{protocol}:%{destination}:%{port} [%{result}] email: %{email}"
                     field: "message"
                     target_prefix: ""
-                - grok:
-                    patterns:
-                      - '%{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{TIME} %{IP:client_ip}:%{NUMBER:client_port:int} accepted %{WORD:protocol}:%{HOSTNAME:destination}:%{NUMBER:port:int} \[%{WORD:result}\] email: %{EMAILADDRESS:email}'
-                    ignore_missing: true
+                # - grok:
+                #     patterns:
+                #       - '%{YEAR}/%{MONTHNUM}/%{MONTHDAY} %{TIME} %{IP:client_ip}:%{NUMBER:client_port:int} accepted %{WORD:protocol}:%{HOSTNAME:destination}:%{NUMBER:port:int} \[%{WORD:result}\] email: %{EMAILADDRESS:email}'
+                #     ignore_missing: true
 
 output.elasticsearch:
   hosts: "${ELASTICSEARCH_HOSTS}"
