@@ -64,8 +64,8 @@ services:
       driver: "local"
 
   hysteria:
-    image: tobyxdd/hysteria
     container_name: hysteria
+    image: tobyxdd/hysteria
     restart: always
     depends_on:
       caddy:
