@@ -1,0 +1,10 @@
+# https://hysteria.network/zh/docs/advanced/Full-Server-Config
+
+tls:
+  cert: /certs/cert.crt
+  key: /certs/cert.key
+
+auth:
+  type: userpass
+  userpass:
+    mock: mock-pass

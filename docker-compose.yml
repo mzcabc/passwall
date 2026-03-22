@@ -40,12 +40,17 @@ services:
         max-file: "3"
         max-size: "100m"
     environment:
-      - TZ=Asia/Shanghai
+      TZ: Asia/Shanghai
 
   caddy:
     container_name: caddy
     image: caddy
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/caddy/certificates/acme-v02.api.letsencrypt.org-directory/$${DOMAIN}/$${DOMAIN}.crt"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./caddy:/data/caddy
@@ -56,6 +61,24 @@ services:
       - DOMAIN=${DOMAIN}
     logging:
       driver: "local"
+
+  hysteria:
+    image: tobyxdd/hysteria
+    container_name: hysteria
+    restart: always
+    depends_on:
+      caddy:
+        condition: service_healthy
+    ports:
+      - 443:443/udp
+    volumes:
+      - ./hysteria.yml:/etc/hysteria.yml
+      - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.crt:/certs/cert.crt:ro
+      - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.key:/certs/cert.key:ro
+    command: ["server", "-c", "/etc/hysteria.yml"]
+    environment:
+      HYSTERIA_LOG_FORMAT: json
+      TZ: Asia/Shanghai
 
   filebeat:
     container_name: filebeat
