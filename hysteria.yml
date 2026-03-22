@@ -7,4 +7,4 @@ tls:
 auth:
   type: userpass
   userpass:
-    mock: mock-pass
+    ##_HYSTERIA_USERS_##

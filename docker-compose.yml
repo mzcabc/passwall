@@ -21,6 +21,7 @@ services:
     volumes:
       - ./kv/users.json:/users.json
       - ./v2ray-server.json:/v2ray-server.json
+      - ./hysteria.yml:/hysteria.yml
       - ./conf_gen.sh:/conf_gen.sh
       - conf:/conf
 
@@ -69,13 +70,15 @@ services:
     depends_on:
       caddy:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
     ports:
       - 443:443/udp
     volumes:
-      - ./hysteria.yml:/etc/hysteria.yml
+      - conf:/conf
       - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.crt:/certs/cert.crt:ro
       - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.key:/certs/cert.key:ro
-    command: ["server", "-c", "/etc/hysteria.yml"]
+    command: ["server", "-c", "/conf/hysteria.yml"]
     environment:
       HYSTERIA_LOG_FORMAT: json
       TZ: Asia/Shanghai
