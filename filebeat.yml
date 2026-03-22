@@ -4,7 +4,7 @@ filebeat.autodiscover:
       templates:
         - condition:
             contains:
-              docker.container.image: v2fly
+              docker.container.name: v2fly
           config:
             - type: container
               paths:
@@ -12,7 +12,7 @@ filebeat.autodiscover:
 
         - condition:
             contains:
-              docker.container.image: hysteria
+              docker.container.name: hysteria
           config:
             - type: container
               paths:
@@ -27,10 +27,10 @@ output.elasticsearch:
   pipelines:
     - pipeline: "hysteria-log"
       when.contains:
-        container.image: "hysteria"
+        container.name: "hysteria"
     - pipeline: "v2fly-log"
       when.contains:
-        container.image: "v2fly"
+        container.name: "v2fly"
 
 setup.template.enabled: false
 
