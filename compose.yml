@@ -20,8 +20,8 @@ services:
     command: /bin/ash /conf_gen.sh
     volumes:
       - ./kv/users.json:/users.json
-      - ./v2ray-server.json:/v2ray-server.json
-      - ./hysteria.yml:/hysteria.yml
+      - ./v2ray.tmpl.json:/v2ray.tmpl.json
+      - ./hysteria.tmpl.yml:/hysteria.tmpl.yml
       - ./conf_gen.sh:/conf_gen.sh
       - conf:/conf
 
@@ -34,7 +34,7 @@ services:
     restart: always
     volumes:
       - conf:/conf
-    command: run -c /conf/v2ray-server.json
+    command: run -c /conf/v2ray.json
     logging:
       driver: "json-file"
       options:
