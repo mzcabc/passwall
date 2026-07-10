@@ -1,0 +1,96 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "trojan",
+      "tag": "trojan-in",
+      "listen": "::",
+      "listen_port": 443,
+      "users": [],
+      "tls": {
+        "enabled": true,
+        "server_name": "##_DOMAIN_##",
+        "certificate_path": "/certs/fullchain.pem",
+        "key_path": "/certs/privkey.pem"
+      },
+      "fallback": {
+        "server": "caddy",
+        "server_port": 80
+      }
+    },
+    {
+      "type": "hysteria2",
+      "tag": "hysteria2-in",
+      "listen": "::",
+      "listen_port": 443,
+      "users": [],
+      "tls": {
+        "enabled": true,
+        "server_name": "##_DOMAIN_##",
+        "certificate_path": "/certs/fullchain.pem",
+        "key_path": "/certs/privkey.pem"
+      },
+      "masquerade": {
+        "type": "proxy",
+        "url": "http://caddy:80",
+        "rewrite_host": true
+      }
+    },
+    {
+      "type": "anytls",
+      "tag": "anytls-in",
+      "listen": "::",
+      "listen_port": 8443,
+      "users": [],
+      "tls": {
+        "enabled": true,
+        "server_name": "##_DOMAIN_##",
+        "certificate_path": "/certs/fullchain.pem",
+        "key_path": "/certs/privkey.pem"
+      }
+    },
+    {
+      "type": "vmess",
+      "tag": "vmess-wss-in",
+      "listen": "::",
+      "listen_port": 8444,
+      "users": [],
+      "tls": {
+        "enabled": true,
+        "server_name": "##_DOMAIN_##",
+        "certificate_path": "/certs/fullchain.pem",
+        "key_path": "/certs/privkey.pem"
+      },
+      "transport": {
+        "type": "ws",
+        "path": "/phpmyadmin"
+      }
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "action": "reject",
+        "ip_is_private": true
+      },
+      {
+        "action": "reject",
+        "protocol": "bittorrent"
+      }
+    ],
+    "final": "direct"
+  },
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ]
+}

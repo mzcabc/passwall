@@ -1,0 +1,23 @@
+FROM debian:bookworm-slim
+
+ARG TARGETARCH
+ARG SNELL_VERSION=5.0.1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libstdc++6 netcat-openbsd unzip wget \
+    && case "$TARGETARCH" in \
+         amd64) snell_arch=amd64 ;; \
+         386) snell_arch=i386 ;; \
+         arm64) snell_arch=aarch64 ;; \
+         arm) snell_arch=armv7l ;; \
+         *) echo "unsupported architecture: $TARGETARCH" >&2; exit 1 ;; \
+       esac \
+    && wget -q "https://dl.nssurge.com/snell/snell-server-v${SNELL_VERSION}-linux-${snell_arch}.zip" -O /tmp/snell.zip \
+    && unzip /tmp/snell.zip -d /tmp/snell \
+    && install -m 0755 /tmp/snell/snell-server /usr/local/bin/snell-server \
+    && rm -rf /tmp/snell /tmp/snell.zip /var/lib/apt/lists/*
+
+COPY snell-entrypoint.sh /usr/local/bin/snell-entrypoint
+RUN chmod 0755 /usr/local/bin/snell-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/snell-entrypoint"]
