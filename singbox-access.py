@@ -107,7 +107,7 @@ def base_event(parts, action, outcome):
             "type": "proxy",
         },
         "service": {"name": "sing-box", "version": SERVICE_VERSION},
-        "container": {"name": "passwall_singbox-sing-box-1"},
+        "container": {"name": "passwall-sing-box-1"},
         "proxy": {"connection_id": parts["id"]},
         "log": {"level": parts["level"].lower()},
     }
