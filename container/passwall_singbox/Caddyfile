@@ -1,0 +1,13 @@
+{
+  auto_https off
+}
+
+:80 {
+  route /whoami {
+    respond "Hello, World! from {http.request.host}"
+  }
+
+  reverse_proxy * https://v2ex.com {
+    header_up Host v2ex.com
+  }
+}

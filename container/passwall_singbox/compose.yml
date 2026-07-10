@@ -1,0 +1,170 @@
+services:
+  kv:
+    image: ghcr.io/mzcabc/docker-cloudflare-kv:main
+    environment:
+      AUTH: ${KV_AUTH}
+      ACCOUNT_ID: ${KV_ACCOUNT_ID}
+      NAMESPACE_ID: ${KV_NAMESPACE_ID}
+      KEY_NAME: ${KV_KEY_NAME}
+      OUTPUT_FILE: users.json
+    volumes:
+      - ./kv:/kv
+
+  setup:
+    image: alpine:3.22
+    depends_on:
+      kv:
+        condition: service_completed_successfully
+    command: /bin/ash /conf_gen.sh
+    environment:
+      DOMAIN: ${DOMAIN}
+      DISABLED_USERS: ${DISABLED_USERS:-legacy}
+    volumes:
+      - ./kv:/kv:ro
+      - ./sing-box.tmpl.json:/sing-box.tmpl.json:ro
+      - ./conf_gen.sh:/conf_gen.sh:ro
+      - conf:/conf
+
+  cert-setup:
+    image: neilpang/acme.sh:3.1.1
+    entrypoint: /bin/sh
+    command: /scripts/acme-entrypoint.sh
+    environment:
+      DOMAIN: ${DOMAIN}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      KV_ACCOUNT_ID: ${KV_ACCOUNT_ID}
+    volumes:
+      - ./acme-entrypoint.sh:/scripts/acme-entrypoint.sh:ro
+      - acme-data:/acme.sh
+      - certs:/certs
+
+  cert-renew:
+    image: neilpang/acme.sh:3.1.1
+    restart: unless-stopped
+    depends_on:
+      cert-setup:
+        condition: service_completed_successfully
+    entrypoint: /bin/sh
+    command: /scripts/acme-entrypoint.sh daemon
+    environment:
+      DOMAIN: ${DOMAIN}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      KV_ACCOUNT_ID: ${KV_ACCOUNT_ID}
+    volumes:
+      - ./acme-entrypoint.sh:/scripts/acme-entrypoint.sh:ro
+      - acme-data:/acme.sh
+      - certs:/certs
+    logging:
+      driver: local
+
+  caddy:
+    image: caddy:2.11.2-alpine
+    restart: always
+    expose:
+      - "80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/whoami"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    logging:
+      driver: local
+
+  sing-box:
+    image: ghcr.io/sagernet/sing-box@sha256:c8b67944345dc84a226b648a71f854818606eae0813c4e6a452f192ef821b5b8
+    restart: always
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      cert-setup:
+        condition: service_completed_successfully
+      caddy:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["sing-box --disable-color run -c /conf/config.json 2>&1 | tee -a /var/log/sing-box/server.log"]
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "443:443/tcp"
+      - "443:443/udp"
+      - "8443:8443/tcp"
+      - "8444:8444/tcp"
+    volumes:
+      - conf:/conf:ro
+      - certs:/certs:ro
+      - singbox-log:/var/log/sing-box
+    healthcheck:
+      test: ["CMD", "sing-box", "check", "-c", "/conf/config.json"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-file: "3"
+        max-size: "100m"
+
+  elastic-setup:
+    image: alpine:3.22
+    command: /bin/sh /elastic-setup-v3.sh
+    environment:
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+      ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME}
+      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+    volumes:
+      - ./elastic-setup-v3.sh:/elastic-setup-v3.sh:ro
+
+  singbox-access:
+    image: python:3.13-alpine
+    restart: unless-stopped
+    depends_on:
+      sing-box:
+        condition: service_healthy
+      elastic-setup:
+        condition: service_completed_successfully
+    command: ["python", "-u", "/singbox-access.py"]
+    environment:
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+      ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME}
+      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+      ES_SSL_VERIFY: ${ES_SSL_VERIFY:-false}
+      HOSTNAME: ${HOSTNAME}
+      OBSERVER_HOSTNAME: cloud.col-lax1
+      SING_BOX_VERSION: 1.13.14
+      MAX_LOG_BYTES: "104857600"
+      STATE_TTL_SECONDS: "300"
+    volumes:
+      - ./singbox-access.py:/singbox-access.py:ro
+      - singbox-log:/var/log/sing-box
+    logging:
+      driver: local
+
+  snell:
+    build:
+      context: .
+      dockerfile: Dockerfile.snell
+    restart: always
+    ports:
+      - "${SNELL_PORT:-38458}:${SNELL_PORT:-38458}/tcp"
+      - "${SNELL_PORT:-38458}:${SNELL_PORT:-38458}/udp"
+    environment:
+      SNELL_LISTEN: "0.0.0.0:${SNELL_PORT:-38458}"
+      SNELL_PSK: ${SNELL_PSK}
+      SNELL_IPV6: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${SNELL_PORT:-38458}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: local
+
+volumes:
+  acme-data:
+  certs:
+  conf:
+  singbox-log:
