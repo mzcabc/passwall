@@ -1,26 +1,26 @@
 # passwall
 
-单个 sing-box 作为代理入口，Caddy 仅作为 Compose 内部 fallback/masquerade 网站：
+passwall 提供多协议代理入口和默认 Web fallback 页面。公网端口如下：
 
-- TCP 443：Trojan，认证失败 fallback 到 `caddy:80`
-- UDP 443：Hysteria 2，未认证 HTTP/3 masquerade 到 `caddy:80`
+- TCP 443：Trojan，认证失败时返回默认 Web 页面
+- UDP 443：Hysteria 2，未认证 HTTP/3 请求返回默认 Web 页面
 - TCP 8443：AnyTLS
 - TCP 8444：VMess WebSocket + TLS，路径 `/phpmyadmin`
 - TCP 80：不开放
 - TCP/UDP 38458：Snell v5，独立 PSK，仅供个人使用
 
-证书由独立 acme.sh 容器通过 Cloudflare DNS-01 签发和续期。`CF_DNS_API_TOKEN` 必须是独立的最小权限 Token，至少具有目标 Zone 的 DNS 编辑权限。
+TLS 证书通过 Cloudflare DNS-01 自动签发和续期。`CF_DNS_API_TOKEN` 必须是独立的最小权限 Token，至少具有目标 Zone 的 DNS 编辑权限。
 
 ## KV 用户格式
 
-现有 `{id,email,description}` 数组可以直接使用。默认映射：
+用户配置来自 Cloudflare KV。现有 `{id,email,description}` 数组可以直接使用，默认映射如下：
 
 - Trojan：密码为 `id`
 - Hysteria 2：密码为 `email:id`，兼容原官方 Hysteria `userpass`
 - AnyTLS：密码为 `id`
 - VMess：UUID 为 `id`
 
-推荐逐步改成独立凭据：
+也支持为各协议配置独立凭据：
 
 ```json
 {
@@ -38,7 +38,7 @@
 
 Hysteria 2 的最终客户端密码始终生成成 `email:password`。
 
-## 启动
+## 部署
 
 ```bash
 cp .env.sample .env
