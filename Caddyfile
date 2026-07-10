@@ -1,14 +1,13 @@
 {
-  auto_https disable_redirects
+  auto_https off
 }
 
-{$DOMAIN} {
-  reverse_proxy /phpmyadmin v2fly:90
-  reverse_proxy /manage v2fly:91
-
+:80 {
   route /whoami {
     respond "Hello, World! from {http.request.host}"
   }
 
-  reverse_proxy * http://v2ex.com
+  reverse_proxy * https://v2ex.com {
+    header_up Host v2ex.com
+  }
 }
