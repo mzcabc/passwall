@@ -4,7 +4,7 @@ ARG TARGETARCH
 ARG SNELL_VERSION=5.0.1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libstdc++6 unzip wget \
+    && apt-get install -y --no-install-recommends ca-certificates libstdc++6 netcat-openbsd unzip wget \
     && case "$TARGETARCH" in \
          amd64) snell_arch=amd64 ;; \
          386) snell_arch=i386 ;; \

@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import threading
 import time
 import urllib.request
@@ -8,6 +9,7 @@ LOG = "/var/log/hysteria/server.log"
 API = "http://hysteria:9999/dump/streams"
 SECRET = os.environ["HYSTERIA_API_SECRET"]
 INTERVAL = float(os.getenv("POLL_INTERVAL", "1"))
+MAX_LOG_BYTES = int(os.getenv("MAX_LOG_BYTES", "20971520"))
 
 lock = threading.Lock()
 sessions = {}
@@ -26,6 +28,11 @@ def follow_sessions():
         while True:
             line = log.readline()
             if not line:
+                if log.tell() >= MAX_LOG_BYTES and os.path.getsize(LOG) >= MAX_LOG_BYTES:
+                    shutil.copyfile(LOG, LOG + ".1")
+                    with open(LOG, "r+", encoding="utf-8") as active:
+                        active.truncate(0)
+                    log.seek(0)
                 time.sleep(0.1)
                 continue
             try:

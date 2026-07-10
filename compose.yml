@@ -27,6 +27,7 @@ services:
       - conf:/conf
     environment:
       - HYSTERIA_API_SECRET=${HYSTERIA_API_SECRET}
+      - DISABLED_USERS=${DISABLED_USERS:-legacy}
 
   v2fly:
     container_name: v2fly
@@ -45,6 +46,12 @@ services:
         max-size: "100m"
     environment:
       TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "v2ray", "test", "-c", "/conf/v2ray.json"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   caddy:
     container_name: caddy
@@ -86,7 +93,14 @@ services:
     command: ["hysteria server -c /conf/hysteria.yml 2>&1 | tee /var/log/hysteria/server.log"]
     environment:
       HYSTERIA_LOG_FORMAT: json
+      HYSTERIA_API_SECRET: ${HYSTERIA_API_SECRET}
       TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- --header='Authorization: $${HYSTERIA_API_SECRET}' http://127.0.0.1:9999/online >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   hysteria-access:
     container_name: hysteria-access
@@ -97,10 +111,11 @@ services:
     environment:
       HYSTERIA_API_SECRET: ${HYSTERIA_API_SECRET}
       POLL_INTERVAL: "1"
+      MAX_LOG_BYTES: "20971520"
       NODE_NAME: ${HOSTNAME}
     volumes:
       - ./hysteria-access.py:/hysteria-access.py:ro
-      - hysteria-log:/var/log/hysteria:ro
+      - hysteria-log:/var/log/hysteria
     command: ["python", "-u", "/hysteria-access.py"]
 
   anytls:
@@ -122,6 +137,12 @@ services:
     command: ["--disable-color", "run", "-c", "/conf/anytls.json"]
     environment:
       TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "sing-box", "check", "-c", "/conf/anytls.json"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   anytls-access:
     container_name: anytls-access
@@ -129,9 +150,12 @@ services:
     restart: always
     depends_on:
       - anytls
+    environment:
+      SOURCE_TTL_SECONDS: "60"
+      MAX_LOG_BYTES: "20971520"
     volumes:
       - ./anytls-access.py:/anytls-access.py:ro
-      - anytls-log:/var/log/sing-box:ro
+      - anytls-log:/var/log/sing-box
     command: ["python", "-u", "/anytls-access.py"]
 
   snell:
@@ -147,6 +171,12 @@ services:
       SNELL_LISTEN: "0.0.0.0:${SNELL_PORT:-38458}"
       SNELL_PSK: ${SNELL_PSK}
       SNELL_IPV6: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 ${SNELL_PORT:-38458}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   filebeat:
     container_name: filebeat

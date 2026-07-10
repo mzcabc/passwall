@@ -1,10 +1,13 @@
 import json
 import os
 import re
+import shutil
 import time
 from datetime import datetime
 
 LOG = "/var/log/sing-box/server.log"
+SOURCE_TTL = float(os.getenv("SOURCE_TTL_SECONDS", "60"))
+MAX_LOG_BYTES = int(os.getenv("MAX_LOG_BYTES", "20971520"))
 SOURCE = re.compile(
     r"^(?P<tz>\S+) (?P<time>\S+ \S+) \S+ \[(?P<id>\d+) (?P<elapsed>\d+)ms\] "
     r"inbound/anytls\[[^\]]+\]: inbound connection from (?P<address>.+)$"
@@ -58,15 +61,27 @@ with open(LOG, "r", encoding="utf-8", errors="replace") as log:
     while True:
         line = log.readline()
         if not line:
+            if log.tell() >= MAX_LOG_BYTES and os.path.getsize(LOG) >= MAX_LOG_BYTES:
+                shutil.copyfile(LOG, LOG + ".1")
+                with open(LOG, "r+", encoding="utf-8") as active:
+                    active.truncate(0)
+                log.seek(0)
+            cutoff = time.monotonic() - SOURCE_TTL
+            sources = {
+                connection_id: value
+                for connection_id, value in sources.items()
+                if value[1] >= cutoff
+            }
             time.sleep(0.1)
             continue
         line = line.strip()
         match = SOURCE.match(line)
         if match:
-            sources[match["id"]] = match.groupdict()
+            sources[match["id"]] = (match.groupdict(), time.monotonic())
             continue
         match = TARGET.match(line)
         if match:
-            source = sources.pop(match["id"], None)
+            source_entry = sources.pop(match["id"], None)
+            source = source_entry[0] if source_entry else None
             if source:
                 emit(source, match.groupdict())

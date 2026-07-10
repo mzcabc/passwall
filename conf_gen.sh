@@ -3,7 +3,12 @@ apk add --no-cache jq > /dev/null 2>&1
 
 # Keep the legacy array compatible with Cloudflare KV/gq while allowing optional
 # per-protocol overrides under .protocols.
-ACTIVE_USERS=$(jq -c '[.[] | select(.enabled // true)]' /users.json)
+DISABLED_USERS_JSON=$(printf '%s' "${DISABLED_USERS:-}" | jq -Rc 'split(",") | map(select(length > 0))')
+ACTIVE_USERS=$(jq -c --argjson disabled "$DISABLED_USERS_JSON" '[
+  .[]
+  | select(.enabled // true)
+  | select(.email as $email | ($disabled | index($email) | not))
+]' /users.json)
 
 # v2ray config: only pass fields understood by VMess.
 USER_DATA=$(echo "$ACTIVE_USERS" | jq -c '[.[] | select(.protocols.vmess.enabled // true) | {

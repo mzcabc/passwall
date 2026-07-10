@@ -19,3 +19,9 @@ sniff:
 trafficStats:
   listen: :9999
   secret: ##_HYSTERIA_API_SECRET_##
+
+masquerade:
+  type: proxy
+  proxy:
+    url: https://news.baidu.com
+    rewriteHost: true

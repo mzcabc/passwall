@@ -36,6 +36,8 @@ Optional per-protocol overrides and disabling are supported:
 
 If an override is omitted, `id` is used by all three main protocols.
 Snell uses the node-level `SNELL_PSK` and is not part of the shared user model.
+`DISABLED_USERS` is a comma-separated node-level deny list and defaults to
+`legacy`.
 
 ## Deploy
 
