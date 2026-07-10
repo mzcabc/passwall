@@ -1,0 +1,40 @@
+{
+  "log": {
+    "level": "info",
+    "output": "/var/log/sing-box/server.log",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "anytls",
+      "tag": "anytls-in",
+      "listen": "::",
+      "listen_port": 8443,
+      "users": "##_ANYTLS_USERS_##",
+      "tls": {
+        "enabled": true,
+        "certificate_path": "/certs/cert.crt",
+        "key_path": "/certs/cert.key"
+      }
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "action": "reject",
+        "ip_is_private": true
+      },
+      {
+        "action": "reject",
+        "protocol": "bittorrent"
+      }
+    ],
+    "final": "direct"
+  },
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ]
+}

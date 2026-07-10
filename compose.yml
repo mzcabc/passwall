@@ -22,8 +22,11 @@ services:
       - ./kv/users.json:/users.json
       - ./v2ray.tmpl.json:/v2ray.tmpl.json
       - ./hysteria.tmpl.yml:/hysteria.tmpl.yml
+      - ./anytls.tmpl.json:/anytls.tmpl.json
       - ./conf_gen.sh:/conf_gen.sh
       - conf:/conf
+    environment:
+      - HYSTERIA_API_SECRET=${HYSTERIA_API_SECRET}
 
   v2fly:
     container_name: v2fly
@@ -76,12 +79,74 @@ services:
       - 443:443/udp
     volumes:
       - conf:/conf
+      - hysteria-log:/var/log/hysteria
       - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.crt:/certs/cert.crt:ro
       - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.key:/certs/cert.key:ro
-    command: ["server", "-c", "/conf/hysteria.yml"]
+    entrypoint: ["sh", "-c"]
+    command: ["hysteria server -c /conf/hysteria.yml 2>&1 | tee /var/log/hysteria/server.log"]
     environment:
       HYSTERIA_LOG_FORMAT: json
       TZ: Asia/Shanghai
+
+  hysteria-access:
+    container_name: hysteria-access
+    image: python:3.13-alpine
+    restart: always
+    depends_on:
+      - hysteria
+    environment:
+      HYSTERIA_API_SECRET: ${HYSTERIA_API_SECRET}
+      POLL_INTERVAL: "1"
+      NODE_NAME: ${HOSTNAME}
+    volumes:
+      - ./hysteria-access.py:/hysteria-access.py:ro
+      - hysteria-log:/var/log/hysteria:ro
+    command: ["python", "-u", "/hysteria-access.py"]
+
+  anytls:
+    container_name: anytls
+    image: ghcr.io/sagernet/sing-box@sha256:c8b67944345dc84a226b648a71f854818606eae0813c4e6a452f192ef821b5b8
+    restart: always
+    depends_on:
+      caddy:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    ports:
+      - "${ANYTLS_PORT:-8443}:8443/tcp"
+    volumes:
+      - conf:/conf:ro
+      - anytls-log:/var/log/sing-box
+      - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.crt:/certs/cert.crt:ro
+      - ./caddy/certificates/acme-v02.api.letsencrypt.org-directory/${DOMAIN}/${DOMAIN}.key:/certs/cert.key:ro
+    command: ["--disable-color", "run", "-c", "/conf/anytls.json"]
+    environment:
+      TZ: Asia/Shanghai
+
+  anytls-access:
+    container_name: anytls-access
+    image: python:3.13-alpine
+    restart: always
+    depends_on:
+      - anytls
+    volumes:
+      - ./anytls-access.py:/anytls-access.py:ro
+      - anytls-log:/var/log/sing-box:ro
+    command: ["python", "-u", "/anytls-access.py"]
+
+  snell:
+    container_name: snell
+    build:
+      context: .
+      dockerfile: Dockerfile.snell
+    restart: always
+    ports:
+      - "${SNELL_PORT:-38458}:${SNELL_PORT:-38458}/tcp"
+      - "${SNELL_PORT:-38458}:${SNELL_PORT:-38458}/udp"
+    environment:
+      SNELL_LISTEN: "0.0.0.0:${SNELL_PORT:-38458}"
+      SNELL_PSK: ${SNELL_PSK}
+      SNELL_IPV6: "false"
 
   filebeat:
     container_name: filebeat
@@ -114,3 +179,5 @@ services:
 volumes:
   conf:
     driver: local
+  hysteria-log:
+  anytls-log:

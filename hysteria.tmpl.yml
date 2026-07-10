@@ -8,3 +8,14 @@ auth:
   type: userpass
   userpass:
     ##_HYSTERIA_USERS_##
+
+sniff:
+  enable: true
+  timeout: 2s
+  rewriteDomain: false
+  tcpPorts: all
+  udpPorts: all
+
+trafficStats:
+  listen: :9999
+  secret: ##_HYSTERIA_API_SECRET_##

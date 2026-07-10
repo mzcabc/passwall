@@ -3,7 +3,7 @@ filebeat.autodiscover:
     - type: docker
       templates:
         - condition:
-            contains:
+            equals:
               docker.container.name: v2fly
           config:
             - type: container
@@ -11,8 +11,24 @@ filebeat.autodiscover:
                 - /var/lib/docker/containers/${data.docker.container.id}/*.log
 
         - condition:
-            contains:
+            equals:
               docker.container.name: hysteria
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+        - condition:
+            equals:
+              docker.container.name: hysteria-access
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+
+        - condition:
+            equals:
+              docker.container.name: anytls-access
           config:
             - type: container
               paths:
@@ -23,13 +39,19 @@ output.elasticsearch:
   ssl.verification_mode: none
   username: "${ELASTICSEARCH_USERNAME}"
   password: "${ELASTICSEARCH_PASSWORD}"
-  index: "proxy-access-%{+yyyyMM}"
+  index: "proxy-access-v2-%{+yyyyMM}"
   pipelines:
     - pipeline: "hysteria-log"
-      when.contains:
+      when.equals:
         container.name: "hysteria"
-    - pipeline: "v2fly-log"
-      when.contains:
+    - pipeline: "hysteria-access-v2"
+      when.equals:
+        container.name: "hysteria-access"
+    - pipeline: "anytls-log-v2"
+      when.equals:
+        container.name: "anytls-access"
+    - pipeline: "v2fly-access-v2"
+      when.equals:
         container.name: "v2fly"
 
 setup.template.enabled: false
