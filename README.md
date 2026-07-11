@@ -43,9 +43,17 @@ Hysteria 2 的最终客户端密码始终生成成 `email:password`。
 ```bash
 cp .env.sample .env
 # 填写 .env
-docker compose run --rm cert-setup
+docker compose up -d
+```
+
+`docker compose up -d` 会先执行环境变量校验、拉取 KV 用户、生成 sing-box 配置、签发或安装证书、初始化 Elasticsearch 索引模板，然后启动代理和访问日志上报组件。
+
+如果需要在批量部署时强制刷新 KV 用户和证书状态，可以显式执行：
+
+```bash
 docker compose run --rm setup
-docker compose run --rm --no-deps sing-box check -c /conf/config.json
+docker compose run --rm cert-setup
+docker compose run --rm --no-deps --entrypoint sing-box sing-box check -c /conf/config.json
 docker compose up -d
 ```
 
