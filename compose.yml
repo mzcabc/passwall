@@ -1,6 +1,29 @@
 services:
+  env-check:
+    image: alpine:3.22
+    command: /bin/sh /env-check.sh
+    environment:
+      KV_AUTH: ${KV_AUTH}
+      KV_ACCOUNT_ID: ${KV_ACCOUNT_ID}
+      KV_NAMESPACE_ID: ${KV_NAMESPACE_ID}
+      KV_KEY_NAME: ${KV_KEY_NAME}
+      DOMAIN: ${DOMAIN}
+      HOSTNAME: ${HOSTNAME}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      SNELL_PORT: ${SNELL_PORT:-38458}
+      SNELL_PSK: ${SNELL_PSK}
+      ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
+      ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME}
+      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+      ES_SSL_VERIFY: ${ES_SSL_VERIFY:-false}
+    volumes:
+      - ./env-check.sh:/env-check.sh:ro
+
   kv:
     image: ghcr.io/mzcabc/docker-cloudflare-kv:main
+    depends_on:
+      env-check:
+        condition: service_completed_successfully
     environment:
       AUTH: ${KV_AUTH}
       ACCOUNT_ID: ${KV_ACCOUNT_ID}
@@ -27,6 +50,9 @@ services:
 
   cert-setup:
     image: neilpang/acme.sh:3.1.1
+    depends_on:
+      env-check:
+        condition: service_completed_successfully
     entrypoint: /bin/sh
     command: /scripts/acme-entrypoint.sh
     environment:
@@ -109,6 +135,9 @@ services:
 
   elastic-setup:
     image: alpine:3.22
+    depends_on:
+      env-check:
+        condition: service_completed_successfully
     command: /bin/sh /elastic-setup-v3.sh
     environment:
       ELASTICSEARCH_HOSTS: ${ELASTICSEARCH_HOSTS}
